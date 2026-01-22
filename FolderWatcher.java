@@ -7,7 +7,10 @@ public class FolderWatcher {
         path.register(ws, StandardWatchEventKinds.ENTRY_CREATE);
         while (true) {
             WatchKey key = ws.take();
-            for (WatchEvent<?> event : key.pollEvents()) { System.out.println("New file: " + event.context()); }
+            for (WatchEvent<?> event : key.pollEvents()) {
+                String fileName = event.context().toString();
+                new ProcessBuilder("./venv/bin/python", "ingest.py", fileName).inheritIO().start().waitFor();
+            }
             key.reset();
         }
     }
