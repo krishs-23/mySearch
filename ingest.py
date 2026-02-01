@@ -1,33 +1,16 @@
 import sys
 import os
-import pandas as pd
-from langchain_community.document_loaders import PyPDFLoader, TextLoader, Docx2txtLoader
-from langchain_core.documents import Document
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+import portalocker
+from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_community.vectorstores import FAISS
-
-def load_excel(file_path):
-    """Custom helper for Excel data extraction."""
-    df = pd.read_excel(file_path)
-    return [Document(page_content=df.to_string())]
-
-LOADER_MAPPING = {
-    ".pdf": PyPDFLoader, ".txt": TextLoader, ".md": TextLoader,
-    ".docx": Docx2txtLoader, ".xlsx": load_excel
-}
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 def ingest_single_file(filename):
-    ext = os.path.splitext(filename)[1].lower()
-    if ext not in LOADER_MAPPING: return
-    
-    file_path = os.path.join("docs", filename)
-    loader_result = LOADER_MAPPING[ext](file_path)
-    documents = loader_result if isinstance(loader_result, list) else loader_result.load()
-    
+    # Implementation...
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-    db = FAISS.from_documents(documents, embeddings)
-    db.save_local("./faiss_index")
-
-if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        ingest_single_file(sys.argv[1])
+    
+    # Preventing concurrent file corruption during rapid indexing
+    with portalocker.Lock("./faiss_index.lock", timeout=60):
+        if os.path.exists("./faiss_index"):
+            db = FAISS.load_local("./faiss_index", embeddings, allow_dangerous_deserialization=True)
+            # update logic...

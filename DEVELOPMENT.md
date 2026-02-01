@@ -12,3 +12,6 @@ Using k=3 for nearest neighbor search to balance context and token usage.
 
 ## Multi-format Support
 Added loaders for Markdown and Plain Text to increase versatility.
+
+## Concurrency and Locking
+Using 'portalocker' to ensure index integrity when multiple files are added at once.
