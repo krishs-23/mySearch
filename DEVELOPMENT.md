@@ -15,3 +15,7 @@ Added loaders for Markdown and Plain Text to increase versatility.
 
 ## Concurrency and Locking
 Using 'portalocker' to ensure index integrity when multiple files are added at once.
+
+## Performance Optimization
+- Added 'RecursiveCharacterTextSplitter' to ensure optimal chunk sizes for embedding quality.
+- Updated LLM to 'gemini-3-flash-preview' for significantly lower latency in the CLI.

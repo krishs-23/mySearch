@@ -1,23 +1,30 @@
 import java.io.IOException;
 import java.nio.file.*;
 
+/**
+ * High-performance filesystem listener to automate document indexing.
+ */
 public class FolderWatcher {
     public static void main(String[] args) throws IOException, InterruptedException {
-        Path path = Paths.get("./docs");
+        Path docPath = Paths.get("./docs");
         WatchService watchService = FileSystems.getDefault().newWatchService();
-        path.register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
+        docPath.register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
+
+        System.out.println("mySearch Watcher started on: " + docPath.toAbsolutePath());
         
         while (true) {
             WatchKey key = watchService.take();
             for (WatchEvent<?> event : key.pollEvents()) {
-                String fileName = event.context().toString();
-                // Execute python ingestion script for the newly detected file
-                Process p = new ProcessBuilder("./venv/bin/python", "ingest.py", fileName)
+                Path filename = (Path) event.context();
+                System.out.println("Automated Indexing: " + filename);
+                
+                // Trigger the Python backend to process the new file
+                new ProcessBuilder("./venv/bin/python", "ingest.py", filename.toString())
                     .inheritIO()
-                    .start();
-                p.waitFor();
+                    .start()
+                    .waitFor();
             }
-            key.reset();
+            if (!key.reset()) break;
         }
     }
 }
