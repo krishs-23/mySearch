@@ -7,17 +7,26 @@ from langchain_classic.chains import RetrievalQA
 load_dotenv()
 
 def main():
-    """
-    Interactive search loop with tuned retrieval parameters.
-    """
-    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-    vector_db = FAISS.load_local("./faiss_index", embeddings, allow_dangerous_deserialization=True)
-    llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
-    qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=vector_db.as_retriever(search_kwargs={"k": 3}))
-    while True:
-        q = input("\nmySearch > ")
-        if q.lower() == 'exit': break
-        print(qa_chain.invoke(q))
+    """Terminal Q&A loop for document interaction."""
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
+    db_path = "./faiss_index"
 
-if __name__ == "__main__":
-    main()
+    if not os.path.exists(db_path):
+        print("Knowledge base empty.")
+        return
+
+    vector_db = FAISS.load_local(db_path, embeddings, allow_dangerous_deserialization=True)
+    llm = ChatGoogleGenerativeAI(model="gemini-3-flash-preview", temperature=0)
+    
+    qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=vector_db.as_retriever(search_kwargs={"k": 3}))
+
+    print("\n=== mySearch Console ===")
+    while True:
+        try:
+            q = input("Query > ")
+            if q.lower() in ['exit', 'quit']: break
+            print(f"\nResponse: {qa_chain.invoke(q)['result']}\n")
+        except Exception as e:
+            print(f"Error: {e}")
+
+if __name__ == "__main__": main()

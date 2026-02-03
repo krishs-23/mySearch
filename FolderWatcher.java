@@ -1,17 +1,22 @@
 import java.io.IOException;
 import java.nio.file.*;
+
+/** OS-level watcher for automated indexing. */
 public class FolderWatcher {
     public static void main(String[] args) throws IOException, InterruptedException {
-        Path path = Paths.get("./docs");
-        WatchService ws = FileSystems.getDefault().newWatchService();
-        path.register(ws, StandardWatchEventKinds.ENTRY_CREATE);
+        Path docPath = Paths.get("./docs");
+        WatchService watchService = FileSystems.getDefault().newWatchService();
+        docPath.register(watchService, StandardWatchEventKinds.ENTRY_CREATE);
+
+        System.out.println("Monitoring: " + docPath.toAbsolutePath());
         while (true) {
-            WatchKey key = ws.take();
+            WatchKey key = watchService.take();
             for (WatchEvent<?> event : key.pollEvents()) {
-                String fileName = event.context().toString();
-                new ProcessBuilder("./venv/bin/python", "ingest.py", fileName).inheritIO().start().waitFor();
+                Path filename = (Path) event.context();
+                new ProcessBuilder("./venv/bin/python", "ingest.py", filename.toString())
+                    .inheritIO().start().waitFor();
             }
-            key.reset();
+            if (!key.reset()) break;
         }
     }
 }
